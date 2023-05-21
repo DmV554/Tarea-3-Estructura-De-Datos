@@ -41,6 +41,7 @@ void eliminarNodoListasPrecedentes(TreeMap*, char*);
 void deshacerAccion(TreeMap*, Stack*);
 void eliminarTarea(TreeMap*, char*);
 void eliminarPrecedente(TreeMap* ,char*, char*);
+void importarTareas(TreeMap*);
 
 /*
   función para comparar claves de tipo string
@@ -124,7 +125,7 @@ int main() {
         break;
 
       case 6:
-        
+        importarTareas(mapaTareas);
         break;
 
       case 0:
@@ -514,4 +515,56 @@ void eliminarPrecedente(TreeMap*mapaTareas ,char*nombreTareaAEliminarPrecedente,
     nodoLista = nextList(tareaNodo->listaTareasPrecedentes);
   }
   
+}
+
+void importarTareas(TreeMap* mapaTareas){
+  char nombreArchivo[101];
+
+  printf("\nIngrese el nombre del archivo a cargar\n");
+  scanf("%100[^\n]s", nombreArchivo);
+
+  FILE* archivoTareas = fopen(nombreArchivo, "r");
+
+  if(archivoTareas == NULL){
+    printf("¡Hubo un error abriendo el archivo!\n");
+    return;
+  }
+
+  char lineaArchivo[200];
+  bool primeraVuelta = true;
+  while (fgets(lineaArchivo, sizeof(lineaArchivo), archivoTareas)){
+    if(primeraVuelta) {
+      primeraVuelta = false;
+      continue;
+    }
+    
+    Tarea *tareaNodo = malloc(sizeof(Tarea));
+    
+    strcpy(tareaNodo->nombre, strtok(lineaArchivo, ", "));
+
+    char *prioridadChar = strtok(NULL, ", ");
+    int prioridad = atoi(prioridadChar);
+
+    tareaNodo->prioridad = prioridad;
+    tareaNodo->explorada = false;
+    tareaNodo->listaTareasPrecedentes = createList();
+
+    char*precedente = strtok(NULL, " \n");
+    while(precedente != NULL) {
+      TareaPrecedente* nodoPrecedente = malloc(sizeof(TareaPrecedente));
+      if(nodoPrecedente == NULL) exit(EXIT_FAILURE);
+      
+      strcpy(nodoPrecedente->nombre, precedente);
+      nodoPrecedente->completada = false;
+        
+      pushBack(tareaNodo->listaTareasPrecedentes, nodoPrecedente);
+
+      precedente = strtok(NULL, " \n");
+    }
+
+    insertTreeMap(mapaTareas, tareaNodo->nombre, tareaNodo);
+  }
+  printf("\n¡Datos cargados de manera exitosa!\n");
+  
+  fclose(archivoTareas);
 }
