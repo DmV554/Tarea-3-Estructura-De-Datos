@@ -39,6 +39,8 @@ void marcarTareaComoCompletada(TreeMap*,Stack*);
 void borrarNodosPrecedentes(List*);
 void eliminarNodoListasPrecedentes(TreeMap*, char*);
 void deshacerAccion(TreeMap*, Stack*);
+void eliminarTarea(TreeMap*, char*);
+
 
 /*
   función para comparar claves de tipo string
@@ -126,20 +128,21 @@ int main() {
         break;
 
       case 0:
-        printf("QUE TENGA BUEN DÍA, ADIÓS\n");
-        ejecucion = false;
-        break;
-
-      default:
-        printf("\nSELECCIONE UNA OPCIÓN VÁLIDA\n\n");
-        break;
+          printf("¡Que tengas un buen día!\n");
+          ejecucion = false;
+          break;
+  
+        default:
+          printf("\nSelecciona una opción válida\n\n");
+          break;
       }
     } else {
-      if (isalpha(opcion[0]))
-        printf("\nSELECCIONE UNA OPCIÓN VÁLIDA\n\n");
+      if (isalpha(opcion[0])){
+        printf("\nSelecciona una opción válida\n\n");
+      }
     }
   }
-    return 0;
+  return 0;
 }
 
 void agregarTarea(TreeMap *mapaTareas, Stack*pilaAcciones) {
@@ -459,7 +462,7 @@ void deshacerAccion(TreeMap*mapaTareas, Stack*pilaACciones) {
   }
 
   if(strcmp(ultimaAccion->accion, "agregar tarea") == 0) {
-    //eliminarTarea(mapaTareas,ultimaAccion->estadoTarea->nombre);
+    eliminarTarea(mapaTareas,ultimaAccion->estadoTarea->nombre);
     stack_pop(pilaACciones);
   }
 
@@ -474,4 +477,26 @@ void deshacerAccion(TreeMap*mapaTareas, Stack*pilaACciones) {
   }
 
   printf("Accion deshecha con exito\n");
+}
+
+void eliminarTarea(TreeMap*mapaTareas, char*nombreTareaAEliminar) {
+  Pair* tareaAEliminarNodoPair = searchTreeMap(mapaTareas, nombreTareaAEliminar);
+  Tarea*tareaAEliminarNodo = tareaAEliminarNodoPair->value;
+
+  if(tareaAEliminarNodo == NULL){
+    printf("La tarea %s no se encontró en la lista\n", nombreTareaAEliminar);
+    return;
+  }
+
+  if(firstList(tareaAEliminarNodo->listaTareasPrecedentes) != NULL) {
+
+    borrarNodosPrecedentes(tareaAEliminarNodo->listaTareasPrecedentes);
+    eliminarNodoListasPrecedentes(mapaTareas,tareaAEliminarNodo->nombre);
+    eraseTreeMap(mapaTareas, tareaAEliminarNodo);
+    
+  } else {
+    eliminarNodoListasPrecedentes(mapaTareas,tareaAEliminarNodo->nombre);
+    eraseTreeMap(mapaTareas, tareaAEliminarNodo);
+  }    
+  
 }
