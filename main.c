@@ -146,6 +146,8 @@ int main() {
   return 0;
 }
 
+/*Funcion para agregar una tarea al arbol con mapa, no se permiten tareas repetidas.
+Se agrega a la pila de acciones la acción agregar, para deshacerla si lo indica el usuario*/
 void agregarTarea(TreeMap *mapaTareas, Stack*pilaAcciones) {
   Tarea* tarea = (Tarea*) malloc(sizeof(Tarea));
   
@@ -175,6 +177,10 @@ void agregarTarea(TreeMap *mapaTareas, Stack*pilaAcciones) {
   printf("\nTAREA INSERTADA CON ÉXITO\n");
 }
 
+/*Función que establece precedencia entre dos tareas, la tarea precedente se agrega a la lista de ta
+reas precedentes de una tarea en particular, se agrega a la pila de acciones la accion de establecer
+precedencia para posteriormente deshacerla si es indicado. Si hay tareas que no existen la ejecucion 
+de la funcion finaliza*/
 void establecerPrecedencia(TreeMap *mapaTareas, Stack*pilaAcciones) {
   char tareaPrecedente[31];
   char tareaDependiente[31];
@@ -216,6 +222,7 @@ void establecerPrecedencia(TreeMap *mapaTareas, Stack*pilaAcciones) {
   printf("\nSE HA ESTABLECIDO LA PRECEDENCIA CON ÉXITO\n");
 }
 
+/*Crea un nodo precedente de una tarea y la retorna*/
 TareaPrecedente*crearNodoPrecedente(char*nombre) {
   TareaPrecedente*tareaPrecedenteNodo = malloc(sizeof(TareaPrecedente));
       strcpy(tareaPrecedenteNodo->nombre,nombre);
@@ -223,6 +230,7 @@ TareaPrecedente*crearNodoPrecedente(char*nombre) {
 
     return tareaPrecedenteNodo;
 }
+
 
 void mostrarTareasPorHacer(TreeMap *mapaTareas) {
   // Crear un montículo de mínimos para ordenar las tareas según su prioridad
@@ -298,6 +306,10 @@ void mostrarTareasPorHacer(TreeMap *mapaTareas) {
   mostrarListaTareasPorHacer(tareasPorHacer);
 }
 
+/*Función que recorre todos los nodos del mapa y sus listas poniendolos en su estado inicial, 
+es decir, no explorados y no completados/visitados, esto se hace para que al volver a llamar a la 
+opcion 3, el ordenamiento se realize de forma correcta, de otra manera, los nodos entrarian explorados y/o
+visitados de la llamada anterior, por lo tanto el programa no funcionará correctamente*/
 void reiniciarValores(TreeMap*mapaTareas) {
  Pair *tareaPair = firstTreeMap(mapaTareas);
   if(tareaPair == NULL) {
@@ -323,6 +335,8 @@ void reiniciarValores(TreeMap*mapaTareas) {
   
 }
 
+/*Función que marca un nodo como completado, es decir la tarea se "realizó" y no se considerará para el ordenamiento
+en la opción 3. El nodo completado se tiene que completar en todas las listas que tengan a ese nodo*/
 void marcarNodosComoCompletados(TreeMap*mapaTareas, char*nombreNodoACompletar) {
    Pair *tareaPair = firstTreeMap(mapaTareas);
    Tarea*tarea = tareaPair->value;
@@ -377,6 +391,11 @@ void mostrarPrecedentes(List*listaPrecedentes) {
   } 
 }
 
+/*Función que marca un nodo como completado, es decir lo elimina de la lista de tareas por hacer(y de todo el arbol)
+si tiene relaciones de precedencia pregunta al usuario si esta seguro de eliminarlo, se agrega la accion eliminar 
+a la pila de acciones para deshacerla si es que es indicado.
+Antes de borrar una tarea con precedentes, borramos su lista primero junto a sus nodos precedentes.
+Luego ese nodo lo borramos de todas las listas de precedentes ese nodo en particular, ya que al eliminarse no existe en general*/
 void marcarTareaComoCompletada(TreeMap*mapaTareas, Stack*pilaAcciones){
   char tareaAEliminar[31];
 
@@ -424,6 +443,7 @@ void marcarTareaComoCompletada(TreeMap*mapaTareas, Stack*pilaAcciones){
 
 }
 
+/*Función que borra los nodos precedentes de una lista de precedentes*/
 void borrarNodosPrecedentes(List *listaTareasPrecedentes) {
   TareaPrecedente*nodoLista = firstList(listaTareasPrecedentes);
 
@@ -433,6 +453,7 @@ void borrarNodosPrecedentes(List *listaTareasPrecedentes) {
   }
 }
 
+/*Función que elimina un nodo de todas las listas de precedentes de todas las tareas del arbol*/
 void eliminarNodoListasPrecedentes(TreeMap*mapaTareas, char*tareaAEliminar) {
   Pair*tareaNodoPair = firstTreeMap(mapaTareas);
   Tarea*tareaNodo = tareaNodoPair->value;
@@ -454,6 +475,9 @@ void eliminarNodoListasPrecedentes(TreeMap*mapaTareas, char*tareaAEliminar) {
   }
 }
 
+/*Funcion que deshace una accion en particular, si la accion fue agregar, eliminamos el nodo.
+Si fue establecer precedencia, eliminamos el precedente de la lista de precedentes del nodo
+Si fue borrar tarea o marcar como completada, insertamos el nodo que fue previamente eliminado*/
 void deshacerAccion(TreeMap*mapaTareas, Stack*pilaACciones) {
   Accion*ultimaAccion = stack_top(pilaACciones);
 
@@ -480,6 +504,8 @@ void deshacerAccion(TreeMap*mapaTareas, Stack*pilaACciones) {
   printf("Accion deshecha con exito\n");
 }
 
+/*Elimina una tarea del arbol, eliminando previamente sus precedentes y los nodos de las listas en las que
+es precedente*/
 void eliminarTarea(TreeMap*mapaTareas, char*nombreTareaAEliminar) {
   Pair* tareaAEliminarNodoPair = searchTreeMap(mapaTareas, nombreTareaAEliminar);
   Tarea*tareaAEliminarNodo = tareaAEliminarNodoPair->value;
@@ -502,6 +528,7 @@ void eliminarTarea(TreeMap*mapaTareas, char*nombreTareaAEliminar) {
   
 }
 
+/*Elimina un nodo de la lista de precedentes de una tarea en particular*/
 void eliminarPrecedente(TreeMap*mapaTareas ,char*nombreTareaAEliminarPrecedente, char*nombreTareaPrecedenteAEliminar) {
   Pair*tareaNodoPair = searchTreeMap(mapaTareas, nombreTareaAEliminarPrecedente);
   Tarea*tareaNodo = tareaNodoPair->value;
@@ -517,6 +544,9 @@ void eliminarPrecedente(TreeMap*mapaTareas ,char*nombreTareaAEliminarPrecedente,
   
 }
 
+/*Función que lee un archivo con los elementos de las tareas separadas por espacio y coma (", ")(precedentes solo con  espacio" ")
+Leemos linea por linea separando sus campos con strtok(), añadimos las variables a sus respectivos nodos y se inserta en el mapa
+El especificado (" \n") es usado debido a que el programa leia saltos de linea y los guardaba, cosa que no debe pasar*/
 void importarTareas(TreeMap* mapaTareas){
   char nombreArchivo[101];
 
