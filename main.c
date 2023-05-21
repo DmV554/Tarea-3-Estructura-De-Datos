@@ -40,7 +40,7 @@ void borrarNodosPrecedentes(List*);
 void eliminarNodoListasPrecedentes(TreeMap*, char*);
 void deshacerAccion(TreeMap*, Stack*);
 void eliminarTarea(TreeMap*, char*);
-
+void eliminarPrecedente(TreeMap* ,char*, char*);
 
 /*
   función para comparar claves de tipo string
@@ -467,7 +467,7 @@ void deshacerAccion(TreeMap*mapaTareas, Stack*pilaACciones) {
   }
 
   if(strcmp(ultimaAccion->accion, "establecer precedencia") == 0) {
-    //eliminarPrecedente(mapaTareas,ultimaAccion->estadoTarea->nombre, ultimaAccion->precedente->nombre);
+    eliminarPrecedente(mapaTareas,ultimaAccion->estadoTarea->nombre, ultimaAccion->precedente->nombre);
     stack_pop(pilaACciones);
   }
 
@@ -498,5 +498,20 @@ void eliminarTarea(TreeMap*mapaTareas, char*nombreTareaAEliminar) {
     eliminarNodoListasPrecedentes(mapaTareas,tareaAEliminarNodo->nombre);
     eraseTreeMap(mapaTareas, tareaAEliminarNodo);
   }    
+  
+}
+
+void eliminarPrecedente(TreeMap*mapaTareas ,char*nombreTareaAEliminarPrecedente, char*nombreTareaPrecedenteAEliminar) {
+  Pair*tareaNodoPair = searchTreeMap(mapaTareas, nombreTareaAEliminarPrecedente);
+  Tarea*tareaNodo = tareaNodoPair->value;
+
+  TareaPrecedente*nodoLista = firstList(tareaNodo->listaTareasPrecedentes);
+
+  while(nodoLista!=NULL) {
+    if(strcmp(nodoLista->nombre, nombreTareaPrecedenteAEliminar) == 0) {
+      popCurrent(tareaNodo->listaTareasPrecedentes);
+    }
+    nodoLista = nextList(tareaNodo->listaTareasPrecedentes);
+  }
   
 }
