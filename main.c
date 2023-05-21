@@ -28,6 +28,9 @@ void reiniciarValores(TreeMap*);
 void marcarNodosComoCompletados(TreeMap*, char*);
 void mostrarListaTareasPorHacer(List*) ;
 void mostrarPrecedentes(List*);
+void marcarTareaComoCompletada(TreeMap*);
+void borrarNodosPrecedentes(List*);
+void eliminarNodoListasPrecedentes(TreeMap*, char*);
 
 /*
   función para comparar claves de tipo string
@@ -102,7 +105,7 @@ int main() {
         break;
 
       case 4:
-        
+        marcarTareaComoCompletada(mapaTareas);
         break;
 
       case 5:
@@ -348,4 +351,77 @@ void mostrarPrecedentes(List*listaPrecedentes) {
     printf("%s ", nodoLista->nombre);
     nodoLista = nextList(listaPrecedentes);
   } 
+}
+
+void marcarTareaComoCompletada(TreeMap*mapaTareas){
+  char tareaAEliminar[31];
+
+  printf("Ingrese el nombre de la tarea a marcar como completada: \n");
+  scanf("%30[^\n]s", tareaAEliminar);
+  getchar();
+
+  Pair* tareaAEliminarNodoPair = searchTreeMap(mapaTareas, tareaAEliminar);
+  
+  if(tareaAEliminarNodoPair == NULL) {
+    printf("La tarea %s no se encontró en la lista\n", tareaAEliminar);
+    return;
+ }
+  
+  Tarea*tareaAEliminarNodo = tareaAEliminarNodoPair->value;
+
+
+  if(firstList(tareaAEliminarNodo->listaTareasPrecedentes) != NULL){
+    printf("¿Estás seguro que deseas eliminar la tarea? (s/n)\n");
+    char respuesta[11];
+    scanf("%10[^\n]s", respuesta);
+    getchar();
+    
+    if(strcmp(respuesta, "s") != 0 && strcmp(respuesta, "S") != 0){
+      return;
+    }
+
+    borrarNodosPrecedentes(tareaAEliminarNodo->listaTareasPrecedentes);
+
+    eliminarNodoListasPrecedentes(mapaTareas,tareaAEliminarNodo->nombre);
+
+    eraseTreeMap(mapaTareas, tareaAEliminarNodo);
+    
+  } else {
+    eliminarNodoListasPrecedentes(mapaTareas,tareaAEliminarNodo->nombre);
+    eraseTreeMap(mapaTareas, tareaAEliminarNodo);
+  }
+  
+  
+  printf("La tarea %s se ha marcado como completada y ha sido eliminada de la lista de tareas por hacer.\n", tareaAEliminar);
+
+}
+
+void borrarNodosPrecedentes(List *listaTareasPrecedentes) {
+  TareaPrecedente*nodoLista = firstList(listaTareasPrecedentes);
+
+  while(nodoLista != NULL) {
+    popCurrent(listaTareasPrecedentes);
+    nodoLista = nextList(listaTareasPrecedentes);
+  }
+}
+
+void eliminarNodoListasPrecedentes(TreeMap*mapaTareas, char*tareaAEliminar) {
+  Pair*tareaNodoPair = firstTreeMap(mapaTareas);
+  Tarea*tareaNodo = tareaNodoPair->value;
+
+  while(tareaNodo != NULL) { 
+    TareaPrecedente*nodoLista = firstList(tareaNodo->listaTareasPrecedentes);
+
+    while(nodoLista != NULL) {
+      if(strcmp(tareaAEliminar, nodoLista->nombre) == 0) {
+        popCurrent(tareaNodo->listaTareasPrecedentes);
+      }
+      nodoLista = nextList(tareaNodo->listaTareasPrecedentes);
+    }
+
+    tareaNodoPair =  nextTreeMap(mapaTareas);
+    if(tareaNodoPair == NULL) break;
+    tareaNodo = tareaNodoPair->value;
+    
+  }
 }
