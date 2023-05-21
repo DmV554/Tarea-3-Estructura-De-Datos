@@ -20,6 +20,10 @@ typedef struct {
   bool completada;
 }TareaPrecedente;
 
+void agregarTarea(TreeMap*);
+void establecerPrecedencia(TreeMap*);
+TareaPrecedente* crearNodoPrecedente(char*);
+
 /*
   función para comparar claves de tipo string
   retorna 1 si son iguales
@@ -64,13 +68,13 @@ int main() {
     TreeMap *mapaTareas = createTreeMap(lower_than_string);
 
    while (ejecucion) {
-    printf("\n1.-AGREGAR TAREA\n");
-    printf("2.-ESTABLECER PRECEDENCIA ENTRE TAREAS\n");
-    printf("3.-MOSTRAR TAREAS POR HACER\n");
-    printf("4.-MARCAR TAREA COMO COMPLETADA\n");
-    printf("5.-DESHACER ULTIMA ACCION\n");
-    printf("6.-CARGAR DATOS DESDE UN ARCHIVO DE TEXTO\n");
-    printf("PRESIONE 0 PARA SALIR\n\n");
+    printf("\n1. Agregar tarea\n");
+    printf("2. Establecer precedencia entre tareas\n");
+    printf("3. Mostrar tareas por hacer\n");
+    printf("4. Marcar tarea como completada\n");
+    printf("5. Deshacer última acción\n");
+    printf("6. Cargar datos desde un archivo\n");
+    printf("Presione 0 para salir del programa\n\n");
 
     scanf("%10s[^\n]", opcion);
     getchar();
@@ -81,11 +85,11 @@ int main() {
 
       switch (opcionNumero) {
       case 1:
-      
+        agregarTarea(mapaTareas);
         break;
         
       case 2:
-        
+        establecerPrecedencia(mapaTareas);
         break;
 
       case 3:  
@@ -119,4 +123,71 @@ int main() {
     }
   }
     return 0;
+}
+
+void agregarTarea(TreeMap *mapaTareas) {
+  Tarea* tarea = (Tarea*) malloc(sizeof(Tarea));
+  
+  printf("Ingrese nombre de la tarea a agregar: ");
+  scanf("%30[^\n]s", tarea->nombre);
+  getchar();
+
+  if(searchTreeMap(mapaTareas, tarea->nombre) != NULL) {
+    printf("\nLa tarea %s ya existe\n\n", tarea->nombre);
+    free(tarea);
+    return;
+  }
+  
+  printf("Ingrese la prioridad de la tarea: ");
+  scanf("%i", &tarea->prioridad);
+  tarea->explorada = false;
+
+  tarea->listaTareasPrecedentes = createList();
+  
+  insertTreeMap(mapaTareas, tarea->nombre, tarea);
+
+  printf("\nTAREA INSERTADA CON ÉXITO\n");
+}
+
+void establecerPrecedencia(TreeMap *mapaTareas) {
+  char tareaPrecedente[31];
+  char tareaDependiente[31];
+
+  printf("Ingrese el nombre de la tarea precedente: ");
+  scanf("%30[^\n]s", tareaPrecedente);
+  getchar();
+
+  printf("Ingrese el nombre de la tarea dependiente: ");
+  scanf("%30[^\n]s", tareaDependiente);
+  getchar();
+
+  Pair *tareaPrecedentePair = searchTreeMap(mapaTareas, tareaPrecedente);
+  
+  if(tareaPrecedentePair == NULL) {
+   printf("Una de las tareas o ambas no existen");
+     return;
+ }
+  Tarea*tareaP = tareaPrecedentePair->value;
+  
+  Pair *tareaDependientePair = searchTreeMap(mapaTareas, tareaDependiente);
+  
+  if(tareaDependientePair == NULL) {
+    printf("Una de las tareas o ambas no existen");
+     return;
+ }
+  
+  Tarea*tareaD = tareaDependientePair->value;
+
+  TareaPrecedente * tareaPrecedenteNodo =  crearNodoPrecedente(tareaP->nombre);
+  pushBack(tareaD->listaTareasPrecedentes, tareaPrecedenteNodo);
+
+  printf("\nSE HA ESTABLECIDO LA PRECEDENCIA CON ÉXITO\n");
+}
+
+TareaPrecedente*crearNodoPrecedente(char*nombre) {
+  TareaPrecedente*tareaPrecedenteNodo = malloc(sizeof(TareaPrecedente));
+      strcpy(tareaPrecedenteNodo->nombre,nombre);
+      tareaPrecedenteNodo->completada = false;
+
+    return tareaPrecedenteNodo;
 }
