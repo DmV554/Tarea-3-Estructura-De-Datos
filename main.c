@@ -20,17 +20,25 @@ typedef struct {
   bool completada;
 }TareaPrecedente;
 
-void agregarTarea(TreeMap*);
-void establecerPrecedencia(TreeMap*);
+typedef struct {
+  Tarea*estadoTarea;
+  TareaPrecedente*precedente;
+  char accion[31];
+}Accion;
+
+
+void agregarTarea(TreeMap*,Stack*);
+void establecerPrecedencia(TreeMap*,Stack*);
 TareaPrecedente* crearNodoPrecedente(char*);
 void mostrarTareasPorHacer(TreeMap *);
 void reiniciarValores(TreeMap*);
 void marcarNodosComoCompletados(TreeMap*, char*);
 void mostrarListaTareasPorHacer(List*) ;
 void mostrarPrecedentes(List*);
-void marcarTareaComoCompletada(TreeMap*);
+void marcarTareaComoCompletada(TreeMap*,Stack*);
 void borrarNodosPrecedentes(List*);
 void eliminarNodoListasPrecedentes(TreeMap*, char*);
+void deshacerAccion(TreeMap*, Stack*);
 
 /*
   función para comparar claves de tipo string
@@ -74,6 +82,7 @@ int main() {
     bool ejecucion = true;
 
     TreeMap *mapaTareas = createTreeMap(lower_than_string);
+    Stack*pilaAcciones = stack_create();
 
    while (ejecucion) {
     printf("\n1. Agregar tarea\n");
@@ -93,11 +102,11 @@ int main() {
 
       switch (opcionNumero) {
       case 1:
-        agregarTarea(mapaTareas);
+        agregarTarea(mapaTareas, pilaAcciones);
         break;
         
       case 2:
-        establecerPrecedencia(mapaTareas);
+        establecerPrecedencia(mapaTareas, pilaAcciones);
         break;
 
       case 3:  
@@ -105,11 +114,11 @@ int main() {
         break;
 
       case 4:
-        marcarTareaComoCompletada(mapaTareas);
+        marcarTareaComoCompletada(mapaTareas, pilaAcciones);
         break;
 
       case 5:
-        
+        deshacerAccion(mapaTareas, pilaAcciones);
         break;
 
       case 6:
@@ -133,7 +142,7 @@ int main() {
     return 0;
 }
 
-void agregarTarea(TreeMap *mapaTareas) {
+void agregarTarea(TreeMap *mapaTareas, Stack*pilaAcciones) {
   Tarea* tarea = (Tarea*) malloc(sizeof(Tarea));
   
   printf("Ingrese nombre de la tarea a agregar: ");
@@ -154,10 +163,15 @@ void agregarTarea(TreeMap *mapaTareas) {
   
   insertTreeMap(mapaTareas, tarea->nombre, tarea);
 
+  Accion*AccionAGregar = malloc(sizeof(Accion));
+  AccionAGregar->estadoTarea = tarea;
+  strcpy(AccionAGregar->accion, "agregar tarea");
+
+  stack_push(pilaAcciones, AccionAGregar);
   printf("\nTAREA INSERTADA CON ÉXITO\n");
 }
 
-void establecerPrecedencia(TreeMap *mapaTareas) {
+void establecerPrecedencia(TreeMap *mapaTareas, Stack*pilaAcciones) {
   char tareaPrecedente[31];
   char tareaDependiente[31];
 
@@ -188,6 +202,12 @@ void establecerPrecedencia(TreeMap *mapaTareas) {
 
   TareaPrecedente * tareaPrecedenteNodo =  crearNodoPrecedente(tareaP->nombre);
   pushBack(tareaD->listaTareasPrecedentes, tareaPrecedenteNodo);
+
+  Accion*accionPrecedencia = malloc(sizeof(Accion));
+  accionPrecedencia->estadoTarea = tareaD;
+  accionPrecedencia->precedente = tareaPrecedenteNodo;
+  strcpy(accionPrecedencia->accion, "establecer precedencia");
+  stack_push(pilaAcciones, accionPrecedencia);
 
   printf("\nSE HA ESTABLECIDO LA PRECEDENCIA CON ÉXITO\n");
 }
@@ -353,7 +373,7 @@ void mostrarPrecedentes(List*listaPrecedentes) {
   } 
 }
 
-void marcarTareaComoCompletada(TreeMap*mapaTareas){
+void marcarTareaComoCompletada(TreeMap*mapaTareas, Stack*pilaAcciones){
   char tareaAEliminar[31];
 
   printf("Ingrese el nombre de la tarea a marcar como completada: \n");
@@ -369,6 +389,8 @@ void marcarTareaComoCompletada(TreeMap*mapaTareas){
   
   Tarea*tareaAEliminarNodo = tareaAEliminarNodoPair->value;
 
+  Accion*accionEliminar = malloc(sizeof(Accion));
+  accionEliminar->estadoTarea = tareaAEliminarNodo;
 
   if(firstList(tareaAEliminarNodo->listaTareasPrecedentes) != NULL){
     printf("¿Estás seguro que deseas eliminar la tarea? (s/n)\n");
@@ -391,6 +413,8 @@ void marcarTareaComoCompletada(TreeMap*mapaTareas){
     eraseTreeMap(mapaTareas, tareaAEliminarNodo);
   }
   
+  strcpy(accionEliminar->accion, "borrar tarea");
+  stack_push(pilaAcciones, accionEliminar);
   
   printf("La tarea %s se ha marcado como completada y ha sido eliminada de la lista de tareas por hacer.\n", tareaAEliminar);
 
@@ -424,4 +448,30 @@ void eliminarNodoListasPrecedentes(TreeMap*mapaTareas, char*tareaAEliminar) {
     tareaNodo = tareaNodoPair->value;
     
   }
+}
+
+void deshacerAccion(TreeMap*mapaTareas, Stack*pilaACciones) {
+  Accion*ultimaAccion = stack_top(pilaACciones);
+
+  if(ultimaAccion == NULL) {
+    printf("NO HAY ACCIONES REALIZADAS\n");
+    return;
+  }
+
+  if(strcmp(ultimaAccion->accion, "agregar tarea") == 0) {
+    //eliminarTarea(mapaTareas,ultimaAccion->estadoTarea->nombre);
+    stack_pop(pilaACciones);
+  }
+
+  if(strcmp(ultimaAccion->accion, "establecer precedencia") == 0) {
+    //eliminarPrecedente(mapaTareas,ultimaAccion->estadoTarea->nombre, ultimaAccion->precedente->nombre);
+    stack_pop(pilaACciones);
+  }
+
+  if(strcmp(ultimaAccion->accion, "borrar tarea") == 0) {
+    insertTreeMap(mapaTareas, ultimaAccion->estadoTarea->nombre, ultimaAccion->estadoTarea);
+    stack_pop(pilaACciones);
+  }
+
+  printf("Accion deshecha con exito\n");
 }
