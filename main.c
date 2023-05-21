@@ -23,6 +23,11 @@ typedef struct {
 void agregarTarea(TreeMap*);
 void establecerPrecedencia(TreeMap*);
 TareaPrecedente* crearNodoPrecedente(char*);
+void mostrarTareasPorHacer(TreeMap *);
+void reiniciarValores(TreeMap*);
+void marcarNodosComoCompletados(TreeMap*, char*);
+void mostrarListaTareasPorHacer(List*) ;
+void mostrarPrecedentes(List*);
 
 /*
   función para comparar claves de tipo string
@@ -93,7 +98,7 @@ int main() {
         break;
 
       case 3:  
-        
+        mostrarTareasPorHacer(mapaTareas);
         break;
 
       case 4:
@@ -190,4 +195,157 @@ TareaPrecedente*crearNodoPrecedente(char*nombre) {
       tareaPrecedenteNodo->completada = false;
 
     return tareaPrecedenteNodo;
+}
+
+void mostrarTareasPorHacer(TreeMap *mapaTareas) {
+  // Crear un montículo de mínimos para ordenar las tareas según su prioridad
+  
+  Heap *monticuloMinimos = createHeap();
+
+  // Crear una lista de tareas completadas
+  List *tareasPorHacer = createList();
+
+  reiniciarValores(mapaTareas);
+  // Insertar en el montículo las tareas que no tienen precedentes y marcarlas como exploradas
+  Pair *tareaPair = firstTreeMap(mapaTareas);
+  if(tareaPair == NULL) {
+     return;
+ }
+
+  Tarea*tarea = tareaPair->value;
+  
+  while (tarea != NULL) {
+    if (tarea->prioridad > 0 && firstList(tarea->listaTareasPrecedentes) == NULL) {
+      tarea->explorada = true;
+      heap_push(monticuloMinimos, tarea, tarea->prioridad);
+    }
+     tareaPair = nextTreeMap(mapaTareas);
+     if(tareaPair == NULL) break;
+     tarea = tareaPair->value;
+  }
+
+  // Mientras el montículo no esté vacío:
+  while (heap_top(monticuloMinimos) != NULL) {
+    // Eliminar la raíz del montículo (tarea con prioridad más alta)
+    
+    Tarea *tareaTop = heap_top(monticuloMinimos);
+    heap_pop(monticuloMinimos);
+    // Agregar la tarea eliminada a la lista de tareas completadas
+    
+    pushBack(tareasPorHacer, tareaTop);
+    marcarNodosComoCompletados(mapaTareas, tareaTop->nombre);
+    
+    // Verificar si las tareas no exploradas tienen relaciones de precedencia y agregarlas al montículo si corresponde
+   Pair *tareaPair = firstTreeMap(mapaTareas);
+   Tarea*tarea = tareaPair->value;
+
+    while (tarea != NULL) {
+      if (tarea->explorada == false) {
+        TareaPrecedente *tareaPrecedente = firstList(tarea->listaTareasPrecedentes);
+        
+        bool todasCompletas = true;
+        while(tareaPrecedente != NULL) {
+         if(tareaPrecedente->completada == false) {
+            todasCompletas = false;
+            break;
+         }
+          
+          tareaPrecedente = nextList(tarea->listaTareasPrecedentes);
+        }
+        
+        if(todasCompletas == true) {
+          tarea->explorada = true;
+          heap_push(monticuloMinimos, tarea, tarea->prioridad);
+        }
+        
+      }
+      tareaPair = nextTreeMap(mapaTareas);
+      if(tareaPair == NULL) break;
+      tarea = tareaPair->value;
+    }
+
+ 
+  }
+
+  // Mostrar la lista de tareas completadas
+  mostrarListaTareasPorHacer(tareasPorHacer);
+}
+
+void reiniciarValores(TreeMap*mapaTareas) {
+ Pair *tareaPair = firstTreeMap(mapaTareas);
+  if(tareaPair == NULL) {
+    printf("NO HAY TAREAS\n");
+    return;
+ }
+  
+ Tarea*tarea = tareaPair->value;
+    while (tarea != NULL) {
+
+    tarea->explorada = false;
+    TareaPrecedente* nodoLista = firstList(tarea->listaTareasPrecedentes);
+    while(nodoLista != NULL) {
+        nodoLista->completada = false; 
+      nodoLista = nextList(tarea->listaTareasPrecedentes);
+    }
+          
+    tareaPair = nextTreeMap(mapaTareas);
+    if(tareaPair == NULL) break;
+    tarea = tareaPair->value;
+
+  }
+  
+}
+
+void marcarNodosComoCompletados(TreeMap*mapaTareas, char*nombreNodoACompletar) {
+   Pair *tareaPair = firstTreeMap(mapaTareas);
+   Tarea*tarea = tareaPair->value;
+  
+    while (tarea != NULL) {
+  
+      TareaPrecedente* nodoLista = firstList(tarea->listaTareasPrecedentes);
+
+      while(nodoLista != NULL) {
+        if(strcmp(nodoLista->nombre, nombreNodoACompletar) == 0) {
+          nodoLista->completada = true;
+        }
+        
+        nodoLista = nextList(tarea->listaTareasPrecedentes);
+      }
+            
+      tareaPair = nextTreeMap(mapaTareas);
+      if(tareaPair == NULL) break;
+      tarea = tareaPair->value;
+    }
+  
+}
+
+void mostrarListaTareasPorHacer(List*tareasPorHacer) {
+  if (firstList(tareasPorHacer) == NULL) {
+    printf("No hay tareas por hacer.\n");
+  } else {
+
+    printf("\nTAREAS POR HACER:\n");
+      Tarea*tareasPorHacerNodo = firstList(tareasPorHacer);
+      while (tareasPorHacerNodo != NULL) {
+          printf("%s (Prioridad %d)", tareasPorHacerNodo->nombre, tareasPorHacerNodo->prioridad);
+          mostrarPrecedentes(tareasPorHacerNodo->listaTareasPrecedentes);
+          tareasPorHacerNodo = nextList(tareasPorHacer);
+        printf("\n");
+      }
+    
+    }
+  cleanList(tareasPorHacer);
+}
+
+void mostrarPrecedentes(List*listaPrecedentes) {
+  TareaPrecedente* nodoLista = firstList(listaPrecedentes);
+  if(nodoLista != NULL) {
+     printf(" | Precedentes: ");
+  }
+
+  while(nodoLista != NULL) {
+ 
+    printf("%s ", nodoLista->nombre);
+    nodoLista = nextList(listaPrecedentes);
+  } 
 }
